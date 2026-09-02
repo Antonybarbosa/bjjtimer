@@ -4,6 +4,23 @@ Um aplicativo Android moderno, robusto e ultra-visível, projetado especificamen
 
 ---
 
+## 📸 Demonstração e Capturas de Tela
+
+<p align="center">
+  <img src="screenshots/05_icone_app.png" width="130" alt="Ícone Oficial BJJ Timer" /><br/>
+  <b>Ícone Oficial BJJ Timer</b>
+</p>
+
+| Modo Padrão (Ajustes Rápidos e Rounds) | Modo Full Screen (Combate em Andamento) |
+|:---:|:---:|
+| <img src="screenshots/01_modo_padrao.png" width="480" alt="Modo Padrão" /> | <img src="screenshots/02_modo_combate.png" width="480" alt="Modo Combate Full Screen" /> |
+
+| Modo Preparação (Âmbar com Beeps) | Configuração de Intervalo entre Rounds |
+|:---:|:---:|
+| <img src="screenshots/03_modo_preparacao.png" width="480" alt="Modo Preparação" /> | <img src="screenshots/04_ajuste_intervalo.png" width="480" alt="Ajuste de Intervalo" /> |
+
+---
+
 ## 📱 Visão Geral e Experiência de Uso
 
 O **BJJ Timer** foi desenvolvido pensando na dinâmica real do tatame: visualização clara à longa distância, operação rápida com toques diretos e alertas sonoros inconfundíveis para que atletas e professores não precisem se preocupar com o relógio durante o treino.
