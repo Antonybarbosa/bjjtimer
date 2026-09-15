@@ -323,10 +323,18 @@ class TimerViewModel @JvmOverloads constructor(
                         )
                     }
 
-                    // Alertas intermediários
-                    if (state.phase == TimerPhase.FIGHT && newRemaining == state.settings.warningSec) {
-                        if (state.settings.soundEnabled) {
-                            soundAlertManager.playTenSecondsWarning()
+                    // Alertas intermediários de contagem regressiva
+                    if (state.phase == TimerPhase.FIGHT) {
+                        if (newRemaining == state.settings.warningSec) {
+                            // Alerta principal dos 10 segundos finais (Wood-Clap duplo de tatame + vibração)
+                            if (state.settings.soundEnabled) {
+                                soundAlertManager.playTenSecondsWarning()
+                            }
+                        } else if (newRemaining in 1 until state.settings.warningSec) {
+                            // Bips sonoros de contagem regressiva a cada segundo (9 até 1)
+                            if (state.settings.soundEnabled) {
+                                soundAlertManager.playCountdownTick(newRemaining)
+                            }
                         }
                     } else if ((state.phase == TimerPhase.PREPARATION || state.phase == TimerPhase.REST) && newRemaining in 1..3) {
                         if (state.settings.soundEnabled) {

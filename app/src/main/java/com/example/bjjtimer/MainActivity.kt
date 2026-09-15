@@ -24,6 +24,9 @@ class MainActivity : ComponentActivity() {
         // Mantém a tela acesa durante o treino no tatame
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        // Botões de volume do celular/tablet controlam diretamente o volume do som do treino
+        volumeControlStream = android.media.AudioManager.STREAM_MUSIC
+
         enableEdgeToEdge()
         setContent {
             BJJTimerTheme {

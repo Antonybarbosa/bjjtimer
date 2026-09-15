@@ -5,12 +5,12 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
-import android.os.CombinedVibration
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.exp
@@ -20,6 +20,7 @@ interface SoundPlayer {
     fun playFightStart()
     fun playRoundEnd()
     fun playTenSecondsWarning()
+    fun playCountdownTick(remainingSec: Int)
     fun playPrepBeep()
     fun playWorkoutComplete()
 }
@@ -28,6 +29,7 @@ class NoOpSoundPlayer : SoundPlayer {
     override fun playFightStart() {}
     override fun playRoundEnd() {}
     override fun playTenSecondsWarning() {}
+    override fun playCountdownTick(remainingSec: Int) {}
     override fun playPrepBeep() {}
     override fun playWorkoutComplete() {}
 }
@@ -52,7 +54,7 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
     override fun playFightStart() {
         audioScope.launch {
             playBellTone()
-            kotlinx.coroutines.delay(280)
+            delay(280)
             playBellTone()
         }
         vibrateFightStart()
@@ -63,21 +65,40 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
      */
     override fun playRoundEnd() {
         audioScope.launch {
-            playGymBuzzer(durationMs = 900)
+            playGymBuzzer(durationMs = 950)
         }
         vibrateRoundEnd()
     }
 
     /**
-     * Toca o sinal de aviso dos últimos 10 segundos
+     * Alerta dos últimos 10 segundos: Duplo toque característico de madeira (Wood-Clap de tatame) + vibração
      */
     override fun playTenSecondsWarning() {
         audioScope.launch {
-            playHighBeep(durationMs = 120, freq = 950.0)
-            kotlinx.coroutines.delay(160)
-            playHighBeep(durationMs = 120, freq = 950.0)
+            playWoodClap()
+            delay(180)
+            playWoodClap()
         }
         vibrateWarning()
+    }
+
+    /**
+     * Bip audível para cada segundo da contagem regressiva final (9 até 1)
+     * Nos últimos 3 segundos (3, 2, 1), o tom fica mais agudo com vibração
+     */
+    override fun playCountdownTick(remainingSec: Int) {
+        audioScope.launch {
+            if (remainingSec in 1..3) {
+                // Últimos 3 segundos: bip agudo (1200Hz) de urgência
+                playHighBeep(durationMs = 150, freq = 1200.0)
+            } else {
+                // De 4 a 9 segundos: bip claro de contagem (850Hz)
+                playHighBeep(durationMs = 120, freq = 850.0)
+            }
+        }
+        if (remainingSec in 1..3) {
+            vibrateShortTick()
+        }
     }
 
     /**
@@ -85,19 +106,19 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
      */
     override fun playPrepBeep() {
         audioScope.launch {
-            playHighBeep(durationMs = 90, freq = 750.0)
+            playHighBeep(durationMs = 110, freq = 750.0)
         }
     }
 
     /**
-     * Som de finalização total do treino
+     * Som de finalização total do treino (Sino duplo + buzina final)
      */
     override fun playWorkoutComplete() {
         audioScope.launch {
             playBellTone()
-            kotlinx.coroutines.delay(250)
+            delay(250)
             playBellTone()
-            kotlinx.coroutines.delay(250)
+            delay(300)
             playGymBuzzer(durationMs = 1200)
         }
         vibrateRoundEnd()
@@ -116,14 +137,13 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
         val fundamental = 640.0 // Frequência harmônica de sino metálico
         for (i in 0 until numSamples) {
             val t = i.toDouble() / sampleRate
-            val decay = exp(-4.5 * t) // decaimento exponencial realista
+            val decay = exp(-4.5 * t)
 
-            // Harmônicos metálicos típicos de gongo/sino
             val s1 = sin(2.0 * PI * fundamental * t)
             val s2 = 0.6 * sin(2.0 * PI * (fundamental * 2.15) * t)
             val s3 = 0.35 * sin(2.0 * PI * (fundamental * 3.7) * t)
 
-            val mixed = (s1 + s2 + s3) * decay * 0.7
+            val mixed = (s1 + s2 + s3) * decay * 0.75
             samples[i] = (mixed * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
         }
 
@@ -138,21 +158,35 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
         val buzzerFreq = 220.0 // Buzina grave estrondosa de ginásio
         for (i in 0 until numSamples) {
             val t = i.toDouble() / sampleRate
-            // Envelope trapezoidal para evitar cliques no início e fim
             val envelope = when {
                 i < 400 -> i.toDouble() / 400.0
                 i > numSamples - 600 -> (numSamples - i).toDouble() / 600.0
                 else -> 1.0
             }
 
-            // Mistura de onda dente-de-serra e harmônicos ímpares
             val h1 = sin(2.0 * PI * buzzerFreq * t)
             val h2 = 0.7 * sin(2.0 * PI * (buzzerFreq * 2.0) * t)
             val h3 = 0.5 * sin(2.0 * PI * (buzzerFreq * 3.0) * t)
             val h4 = 0.4 * sin(2.0 * PI * (buzzerFreq * 5.0) * t)
 
-            val mixed = (h1 + h2 + h3 + h4) * envelope * 0.45
+            val mixed = (h1 + h2 + h3 + h4) * envelope * 0.55
             samples[i] = (mixed * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+        }
+
+        playPcmTrack(samples, sampleRate)
+    }
+
+    private fun playWoodClap() {
+        val sampleRate = 44100
+        val durationMs = 120
+        val numSamples = (durationMs * sampleRate) / 1000
+        val samples = ShortArray(numSamples)
+
+        for (i in 0 until numSamples) {
+            val t = i.toDouble() / sampleRate
+            val decay = exp(-35.0 * t)
+            val s = (sin(2.0 * PI * 880.0 * t) + 0.6 * sin(2.0 * PI * 1320.0 * t)) * decay * 0.9
+            samples[i] = (s * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
         }
 
         playPcmTrack(samples, sampleRate)
@@ -170,7 +204,7 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
                 i > numSamples - 200 -> (numSamples - i).toDouble() / 200.0
                 else -> 1.0
             }
-            val sample = sin(2.0 * PI * freq * t) * envelope * 0.8
+            val sample = sin(2.0 * PI * freq * t) * envelope * 0.95
             samples[i] = (sample * Short.MAX_VALUE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
         }
 
@@ -179,8 +213,9 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
 
     private fun playPcmTrack(samples: ShortArray, sampleRate: Int) {
         try {
+            // USAGE_MEDIA permite que o botão físico de volume do celular controle o som
             val audioAttributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
 
@@ -200,15 +235,15 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
             track.write(samples, 0, samples.size)
             track.play()
 
-            // Libera a memória após término
-            track.setNotificationMarkerPosition(samples.size)
-            track.setPlaybackPositionUpdateListener(object : AudioTrack.OnPlaybackPositionUpdateListener {
-                override fun onMarkerReached(t: AudioTrack?) {
-                    t?.release()
-                }
-
-                override fun onPeriodicNotification(t: AudioTrack?) {}
-            })
+            // Liberação segura e garantida da memória após o áudio terminar de tocar
+            val durationMs = (samples.size * 1000L) / sampleRate
+            audioScope.launch {
+                delay(durationMs + 120)
+                try {
+                    track.stop()
+                    track.release()
+                } catch (_: Exception) {}
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -249,6 +284,16 @@ class SoundAlertManager(private val context: Context) : SoundPlayer {
         } else {
             @Suppress("DEPRECATION")
             vib.vibrate(longArrayOf(0, 100, 80, 100), -1)
+        }
+    }
+
+    private fun vibrateShortTick() {
+        val vib = vibrator ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vib.vibrate(VibrationEffect.createOneShot(70, 160))
+        } else {
+            @Suppress("DEPRECATION")
+            vib.vibrate(70)
         }
     }
 }
