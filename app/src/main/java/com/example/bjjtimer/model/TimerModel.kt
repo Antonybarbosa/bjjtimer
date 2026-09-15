@@ -28,7 +28,10 @@ data class TimerUiState(
     val totalSecondsInPhase: Int = 300,
     val totalElapsedWorkoutSec: Int = 0,
     val settings: TimerSettings = TimerSettings(),
-    val selectedMinutes: Int = 5
+    val selectedMinutes: Int = 5,
+    val totalWorkoutDurationSec: Int = 305,
+    val remainingWorkoutDurationSec: Int = 305,
+    val estimatedEndTimeFormatted: String = ""
 )
 
 object TimerDefaults {

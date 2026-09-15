@@ -3,6 +3,7 @@ package com.example.bjjtimer.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bjjtimer.audio.NoOpSoundPlayer
 import com.example.bjjtimer.audio.SoundAlertManager
 import com.example.bjjtimer.audio.SoundPlayer
 import com.example.bjjtimer.model.TimerPhase
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Locale
 
 class TimerViewModel @JvmOverloads constructor(
     application: Application,
@@ -46,6 +49,16 @@ class TimerViewModel @JvmOverloads constructor(
 
     private var timerJob: Job? = null
 
+    init {
+        _uiState.update { it.withRecalculatedTimes() }
+    }
+
+    private fun updateUiState(transform: (TimerUiState) -> TimerUiState) {
+        _uiState.update { current ->
+            transform(current).withRecalculatedTimes()
+        }
+    }
+
     /**
      * Define o tempo da luta em minutos (1, 3, 4, 5)
      */
@@ -55,7 +68,7 @@ class TimerViewModel @JvmOverloads constructor(
         timerJob = null
 
         val seconds = minutes * 60
-        _uiState.update {
+        updateUiState {
             val newSettings = it.settings.copy(fightDurationSec = seconds)
             it.copy(
                 phase = TimerPhase.IDLE,
@@ -79,7 +92,7 @@ class TimerViewModel @JvmOverloads constructor(
      * Incrementa o número de repetições / rounds (+1)
      */
     fun incrementRounds() {
-        _uiState.update {
+        updateUiState {
             val nextRounds = if (it.totalRounds >= 50) 1 else it.totalRounds + 1
             val updatedSettings = it.settings.copy(totalRounds = nextRounds)
             it.copy(
@@ -93,7 +106,7 @@ class TimerViewModel @JvmOverloads constructor(
      * Retorna o número de rounds para 1 (quando segura o botão)
      */
     fun resetRoundsToOne() {
-        _uiState.update {
+        updateUiState {
             val updatedSettings = it.settings.copy(totalRounds = 1)
             it.copy(
                 totalRounds = 1,
@@ -108,7 +121,7 @@ class TimerViewModel @JvmOverloads constructor(
      */
     fun setRestDuration(restSec: Int) {
         val validRest = restSec.coerceIn(5, 600)
-        _uiState.update {
+        updateUiState {
             val updated = it.settings.copy(restDurationSec = validRest)
             it.copy(
                 settings = updated,
@@ -139,7 +152,7 @@ class TimerViewModel @JvmOverloads constructor(
         if (state.phase == TimerPhase.IDLE || state.phase == TimerPhase.FINISHED) {
             val prepSec = state.settings.preparationSec
             if (prepSec > 0) {
-                _uiState.update {
+                updateUiState {
                     it.copy(
                         phase = TimerPhase.PREPARATION,
                         isRunning = true,
@@ -158,7 +171,7 @@ class TimerViewModel @JvmOverloads constructor(
             }
         } else {
             // Retomando de onde pausou
-            _uiState.update { it.copy(isRunning = true, isPaused = false) }
+            updateUiState { it.copy(isRunning = true, isPaused = false) }
         }
 
         launchTimerLoop()
@@ -167,14 +180,14 @@ class TimerViewModel @JvmOverloads constructor(
     fun pauseTimer() {
         timerJob?.cancel()
         timerJob = null
-        _uiState.update { it.copy(isRunning = false, isPaused = true) }
+        updateUiState { it.copy(isRunning = false, isPaused = true) }
     }
 
     fun resetTimer() {
         timerJob?.cancel()
         timerJob = null
         val settings = _uiState.value.settings
-        _uiState.update {
+        updateUiState {
             it.copy(
                 phase = TimerPhase.IDLE,
                 isRunning = false,
@@ -187,60 +200,66 @@ class TimerViewModel @JvmOverloads constructor(
         }
     }
 
-    fun skipToNextPhase() {
-        val current = _uiState.value
-        when (current.phase) {
-            TimerPhase.PREPARATION -> {
-                startFightPhase(current.currentRound)
+    fun skipPhase() {
+        timerJob?.cancel()
+        timerJob = null
+        val state = _uiState.value
+        when (state.phase) {
+            TimerPhase.IDLE, TimerPhase.PREPARATION -> {
+                startFightPhase(state.currentRound)
             }
             TimerPhase.FIGHT -> {
-                if (current.currentRound >= current.totalRounds) {
+                if (state.currentRound >= state.totalRounds) {
                     finishWorkout()
                 } else {
                     startRestPhase()
                 }
             }
             TimerPhase.REST -> {
-                val nextRound = current.currentRound + 1
-                if (nextRound <= current.totalRounds) {
+                val nextRound = state.currentRound + 1
+                if (nextRound <= state.totalRounds) {
                     startFightPhase(nextRound)
                 } else {
                     finishWorkout()
                 }
             }
-            TimerPhase.IDLE, TimerPhase.FINISHED -> {
-                startTimer()
+            TimerPhase.FINISHED -> {
+                resetTimer()
             }
         }
     }
 
+    fun skipToNextPhase() = skipPhase()
+
     fun previousRound() {
-        val current = _uiState.value
-        if (current.currentRound > 1) {
-            val prevRound = current.currentRound - 1
-            startFightPhase(prevRound)
-        } else {
-            resetTimer()
-        }
+        timerJob?.cancel()
+        timerJob = null
+        val state = _uiState.value
+        val prevRound = (state.currentRound - 1).coerceAtLeast(1)
+        startFightPhase(prevRound)
     }
 
     fun toggleSound() {
-        _uiState.update {
-            val updated = it.settings.copy(soundEnabled = !it.settings.soundEnabled)
-            it.copy(settings = updated)
+        updateUiState {
+            val current = it.settings.soundEnabled
+            it.copy(settings = it.settings.copy(soundEnabled = !current))
         }
     }
 
     fun toggleVibration() {
-        _uiState.update {
-            val updated = it.settings.copy(vibrationEnabled = !it.settings.vibrationEnabled)
-            it.copy(settings = updated)
+        updateUiState {
+            val current = it.settings.vibrationEnabled
+            it.copy(settings = it.settings.copy(vibrationEnabled = !current))
         }
     }
 
+    // ==========================================
+    // TRANSIÇÕES DE FASE
+    // ==========================================
+
     private fun startFightPhase(round: Int) {
         val settings = _uiState.value.settings
-        _uiState.update {
+        updateUiState {
             it.copy(
                 phase = TimerPhase.FIGHT,
                 isRunning = true,
@@ -270,7 +289,7 @@ class TimerViewModel @JvmOverloads constructor(
             return
         }
 
-        _uiState.update {
+        updateUiState {
             it.copy(
                 phase = TimerPhase.REST,
                 isRunning = true,
@@ -291,7 +310,7 @@ class TimerViewModel @JvmOverloads constructor(
         timerJob?.cancel()
         timerJob = null
         val sound = _uiState.value.settings.soundEnabled
-        _uiState.update {
+        updateUiState {
             it.copy(
                 phase = TimerPhase.FINISHED,
                 isRunning = false,
@@ -316,7 +335,7 @@ class TimerViewModel @JvmOverloads constructor(
                 val newElapsed = state.totalElapsedWorkoutSec + 1
 
                 if (newRemaining > 0) {
-                    _uiState.update {
+                    updateUiState {
                         it.copy(
                             remainingSeconds = newRemaining,
                             totalElapsedWorkoutSec = newElapsed
@@ -373,5 +392,80 @@ class TimerViewModel @JvmOverloads constructor(
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+    }
+
+    // ==========================================
+    // CÁLCULOS DE DURAÇÃO TOTAL E FIM DO TREINO
+    // ==========================================
+
+    companion object {
+        fun calculateTotalWorkoutDuration(fightSec: Int, totalRounds: Int, restSec: Int, prepSec: Int): Int {
+            val fights = totalRounds * fightSec
+            val rests = if (totalRounds > 1) (totalRounds - 1) * restSec else 0
+            return prepSec + fights + rests
+        }
+
+        fun calculateRemainingWorkoutDuration(
+            phase: TimerPhase,
+            remainingInPhase: Int,
+            currentRound: Int,
+            totalRounds: Int,
+            fightSec: Int,
+            restSec: Int,
+            prepSec: Int
+        ): Int {
+            return when (phase) {
+                TimerPhase.IDLE -> calculateTotalWorkoutDuration(fightSec, totalRounds, restSec, prepSec)
+                TimerPhase.PREPARATION -> {
+                    val fights = totalRounds * fightSec
+                    val rests = if (totalRounds > 1) (totalRounds - 1) * restSec else 0
+                    remainingInPhase + fights + rests
+                }
+                TimerPhase.FIGHT -> {
+                    val remainingFightsAfterThis = (totalRounds - currentRound).coerceAtLeast(0) * fightSec
+                    val remainingRestsAfterThis = (totalRounds - currentRound).coerceAtLeast(0) * restSec
+                    remainingInPhase + remainingFightsAfterThis + remainingRestsAfterThis
+                }
+                TimerPhase.REST -> {
+                    val roundsLeft = (totalRounds - currentRound).coerceAtLeast(0)
+                    val fightsLeft = roundsLeft * fightSec
+                    val restsLeft = if (roundsLeft > 1) (roundsLeft - 1) * restSec else 0
+                    remainingInPhase + fightsLeft + restsLeft
+                }
+                TimerPhase.FINISHED -> 0
+            }
+        }
+
+        fun formatEstimatedEndTime(remainingSec: Int): String {
+            val cal = Calendar.getInstance()
+            cal.add(Calendar.SECOND, remainingSec)
+            val hour = cal.get(Calendar.HOUR_OF_DAY)
+            val min = cal.get(Calendar.MINUTE)
+            return String.format(Locale.getDefault(), "%02d:%02d", hour, min)
+        }
+    }
+
+    private fun TimerUiState.withRecalculatedTimes(): TimerUiState {
+        val total = calculateTotalWorkoutDuration(
+            fightSec = settings.fightDurationSec,
+            totalRounds = totalRounds,
+            restSec = settings.restDurationSec,
+            prepSec = settings.preparationSec
+        )
+        val remaining = calculateRemainingWorkoutDuration(
+            phase = phase,
+            remainingInPhase = remainingSeconds,
+            currentRound = currentRound,
+            totalRounds = totalRounds,
+            fightSec = settings.fightDurationSec,
+            restSec = settings.restDurationSec,
+            prepSec = settings.preparationSec
+        )
+        val endTime = formatEstimatedEndTime(remaining)
+        return this.copy(
+            totalWorkoutDurationSec = total,
+            remainingWorkoutDurationSec = remaining,
+            estimatedEndTimeFormatted = endTime
+        )
     }
 }

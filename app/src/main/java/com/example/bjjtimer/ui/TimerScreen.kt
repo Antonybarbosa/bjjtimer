@@ -232,7 +232,7 @@ private fun FullScreenTimerDisplay(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Topo do Full Screen: Round e Fase
+                    // Topo do Full Screen: Round, Previsão de Término e Fase
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -253,6 +253,24 @@ private fun FullScreenTimerDisplay(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                                 letterSpacing = 1.2.sp
                             )
+                        }
+
+                        // Previsão discreta de término do treino na tela cheia
+                        if (state.estimatedEndTimeFormatted.isNotBlank()) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = CardBackground.copy(alpha = 0.85f),
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, accentColor.copy(alpha = 0.6f))
+                            ) {
+                                Text(
+                                    text = "🏁 FIM: ${state.estimatedEndTimeFormatted}",
+                                    color = accentColor,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Black,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                    letterSpacing = 1.sp
+                                )
+                            }
                         }
 
                         Text(
@@ -339,7 +357,7 @@ private fun TopHeaderSection(
                 letterSpacing = 1.sp
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Indicador VISÍVEL do Tempo de Intervalo
             Surface(
@@ -348,7 +366,7 @@ private fun TopHeaderSection(
                 border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -363,6 +381,41 @@ private fun TopHeaderSection(
                         fontWeight = FontWeight.ExtraBold,
                         color = RestRed
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            // Indicador de Término do Treino
+            if (state.estimatedEndTimeFormatted.isNotBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = CardBackground,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BeltGold.copy(alpha = 0.6f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🏁 TÉRMINO: ",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.LightGray
+                        )
+                        Text(
+                            text = state.estimatedEndTimeFormatted,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = BeltGold
+                        )
+                        Text(
+                            text = " (${formatTime(state.remainingWorkoutDurationSec)})",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color.Gray
+                        )
+                    }
                 }
             }
         }
@@ -473,6 +526,22 @@ private fun BigFrameTimerDisplay(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 3.dp),
                             letterSpacing = 1.sp
                         )
+                    }
+
+                    if (state.estimatedEndTimeFormatted.isNotBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = CardBackground,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BeltGold.copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                text = "🏁 TÉRMINO: ${state.estimatedEndTimeFormatted}",
+                                color = BeltGold,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                            )
+                        }
                     }
 
                     Text(

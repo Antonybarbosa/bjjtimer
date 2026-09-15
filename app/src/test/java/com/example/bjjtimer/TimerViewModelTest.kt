@@ -94,4 +94,32 @@ class TimerViewModelTest {
         assertEquals("03:00", formatTime(180))
         assertEquals("04:00", formatTime(240))
     }
+
+    @Test
+    fun testCalculateWorkoutDuration() {
+        // 1 round de 5 min (300s) + 5s prep, sem descanso subsequente = 305s
+        val duration1Round = TimerViewModel.calculateTotalWorkoutDuration(
+            fightSec = 300,
+            totalRounds = 1,
+            restSec = 60,
+            prepSec = 5
+        )
+        assertEquals(305, duration1Round)
+
+        // 5 rounds de 5 min (1500s) + 4 intervalos de 1 min (240s) + 5s prep = 1745s
+        val duration5Rounds = TimerViewModel.calculateTotalWorkoutDuration(
+            fightSec = 300,
+            totalRounds = 5,
+            restSec = 60,
+            prepSec = 5
+        )
+        assertEquals(1745, duration5Rounds)
+    }
+
+    @Test
+    fun testEstimatedEndTimeFormattedIsNotEmpty() {
+        val state = viewModel.uiState.value
+        assertTrue(state.estimatedEndTimeFormatted.isNotBlank())
+        assertTrue(state.estimatedEndTimeFormatted.contains(":"))
+    }
 }

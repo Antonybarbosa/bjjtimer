@@ -51,14 +51,18 @@ O **BJJ Timer** foi desenvolvido pensando na dinâmica real do tatame: visualiza
    - Indicador de descanso em destaque contínuo no topo: **`INTERVALO: 01:00`**.
    - Menu de configurações acessível pelo ícone de engrenagem para alterar o descanso entre rounds (**15s, 30s, 45s, 1:00, 1:30, 2:00, 3:00**) ou ajuste manual de segundos.
 
-7. **🔔 Sons Sintetizados Nativos e Vibração**:
+7. **🏁 Cálculo da Duração Total e Horário de Término**:
+   - Calcula em tempo real o tempo total do treino considerando rounds ($N \times \text{luta}$), intervalos ($(N - 1) \times \text{descanso}$) e preparação.
+   - Exibe a previsão do relógio em que a sessão irá acabar (ex: **`🏁 TÉRMINO: 14:56 (41:05)`**) no cabeçalho e na tela cheia (**`🏁 FIM: 14:58`**), recalculando instantaneamente ao mudar rounds ou tempos.
+
+8. **🔔 Sons Sintetizados Nativos e Vibração**:
    - **Início de Combate**: Sino duplo de ringue (*Ding-Ding*).
    - **Fim de Round / Intervalo**: Buzina grave e estridente de arena (*Buzzer*).
-   - **Aviso de 10 Segundos**: Alerta duplo avisando a reta final do rola.
-   - **Contagem Regressiva**: Beeps de preparação (*Prepare-se*).
+   - **Aviso de 10 Segundos**: Alerta duplo com batida de madeira (*Wood-Clap*) de tatame.
+   - **Contagem Regressiva Final (9 a 1)**: Bips a cada segundo da contagem regressiva, com tom agudo (1200Hz) e vibração nos 3 segundos finais.
    - *Geração 100% nativa via PCM 16-bit com `AudioTrack`, funcionando totalmente offline sem depender de arquivos de áudio externos.*
 
-8. **💡 Tela Sempre Ligada**:
+9. **💡 Tela Sempre Ligada**:
    - Configurado com `FLAG_KEEP_SCREEN_ON` para garantir que o display nunca desligue ou bloqueie durante o treino.
 
 ---
