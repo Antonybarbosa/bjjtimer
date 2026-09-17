@@ -162,7 +162,7 @@ class TimerViewModel @JvmOverloads constructor(
                         totalSecondsInPhase = prepSec
                     )
                 }
-                if (state.settings.soundEnabled) {
+                if (state.settings.soundEnabled && state.settings.startSoundEnabled) {
                     soundAlertManager.playPrepBeep()
                 }
             } else {
@@ -253,6 +253,27 @@ class TimerViewModel @JvmOverloads constructor(
         }
     }
 
+    fun toggleStartSound() {
+        updateUiState {
+            val current = it.settings.startSoundEnabled
+            it.copy(settings = it.settings.copy(startSoundEnabled = !current))
+        }
+    }
+
+    fun toggleCountdownSound() {
+        updateUiState {
+            val current = it.settings.countdownSoundEnabled
+            it.copy(settings = it.settings.copy(countdownSoundEnabled = !current))
+        }
+    }
+
+    fun toggleIntervalSound() {
+        updateUiState {
+            val current = it.settings.intervalSoundEnabled
+            it.copy(settings = it.settings.copy(intervalSoundEnabled = !current))
+        }
+    }
+
     // ==========================================
     // TRANSIÇÕES DE FASE
     // ==========================================
@@ -270,7 +291,7 @@ class TimerViewModel @JvmOverloads constructor(
             )
         }
 
-        if (settings.soundEnabled) {
+        if (settings.soundEnabled && settings.startSoundEnabled) {
             soundAlertManager.playFightStart()
         }
 
@@ -299,7 +320,7 @@ class TimerViewModel @JvmOverloads constructor(
             )
         }
 
-        if (settings.soundEnabled) {
+        if (settings.soundEnabled && settings.intervalSoundEnabled) {
             soundAlertManager.playRoundEnd()
         }
 
@@ -346,17 +367,21 @@ class TimerViewModel @JvmOverloads constructor(
                     if (state.phase == TimerPhase.FIGHT) {
                         if (newRemaining == state.settings.warningSec) {
                             // Alerta principal dos 10 segundos finais (Wood-Clap duplo de tatame + vibração)
-                            if (state.settings.soundEnabled) {
+                            if (state.settings.soundEnabled && state.settings.countdownSoundEnabled) {
                                 soundAlertManager.playTenSecondsWarning()
                             }
                         } else if (newRemaining in 1 until state.settings.warningSec) {
                             // Bips sonoros de contagem regressiva a cada segundo (9 até 1)
-                            if (state.settings.soundEnabled) {
+                            if (state.settings.soundEnabled && state.settings.countdownSoundEnabled) {
                                 soundAlertManager.playCountdownTick(newRemaining)
                             }
                         }
-                    } else if ((state.phase == TimerPhase.PREPARATION || state.phase == TimerPhase.REST) && newRemaining in 1..3) {
-                        if (state.settings.soundEnabled) {
+                    } else if (state.phase == TimerPhase.PREPARATION && newRemaining in 1..3) {
+                        if (state.settings.soundEnabled && state.settings.startSoundEnabled) {
+                            soundAlertManager.playPrepBeep()
+                        }
+                    } else if (state.phase == TimerPhase.REST && newRemaining in 1..3) {
+                        if (state.settings.soundEnabled && state.settings.intervalSoundEnabled) {
                             soundAlertManager.playPrepBeep()
                         }
                     }

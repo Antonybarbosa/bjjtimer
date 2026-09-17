@@ -41,6 +41,10 @@ class TimerViewModelTest {
         assertEquals(60, viewModel.uiState.value.remainingSeconds)
         assertEquals(1, viewModel.uiState.value.selectedMinutes)
 
+        viewModel.setFightMinutes(2)
+        assertEquals(120, viewModel.uiState.value.remainingSeconds)
+        assertEquals(2, viewModel.uiState.value.selectedMinutes)
+
         viewModel.setFightMinutes(3)
         assertEquals(180, viewModel.uiState.value.remainingSeconds)
         assertEquals(3, viewModel.uiState.value.selectedMinutes)
@@ -84,6 +88,19 @@ class TimerViewModelTest {
         assertTrue(viewModel.uiState.value.settings.vibrationEnabled)
         viewModel.toggleVibration()
         assertFalse(viewModel.uiState.value.settings.vibrationEnabled)
+
+        // Toggles de sons específicos
+        assertTrue(viewModel.uiState.value.settings.startSoundEnabled)
+        viewModel.toggleStartSound()
+        assertFalse(viewModel.uiState.value.settings.startSoundEnabled)
+
+        assertTrue(viewModel.uiState.value.settings.countdownSoundEnabled)
+        viewModel.toggleCountdownSound()
+        assertFalse(viewModel.uiState.value.settings.countdownSoundEnabled)
+
+        assertTrue(viewModel.uiState.value.settings.intervalSoundEnabled)
+        viewModel.toggleIntervalSound()
+        assertFalse(viewModel.uiState.value.settings.intervalSoundEnabled)
     }
 
     @Test

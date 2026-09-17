@@ -11,13 +11,17 @@ Um aplicativo Android moderno, robusto e ultra-visível, projetado especificamen
   <b>Ícone Oficial BJJ Timer</b>
 </p>
 
-| Modo Padrão (Ajustes Rápidos e Rounds) | Modo Full Screen (Combate em Andamento) |
+| Modo Padrão (Presets 1 a 5 min e Rounds) | Modo Full Screen (Combate em Andamento) |
 |:---:|:---:|
 | <img src="screenshots/01_modo_padrao.png" width="480" alt="Modo Padrão" /> | <img src="screenshots/02_modo_combate.png" width="480" alt="Modo Combate Full Screen" /> |
 
-| Modo Preparação (Âmbar com Beeps) | Configuração de Intervalo entre Rounds |
+| Modo Preparação (Âmbar com Beeps) | Configuração de Intervalo e Presets |
 |:---:|:---:|
 | <img src="screenshots/03_modo_preparacao.png" width="480" alt="Modo Preparação" /> | <img src="screenshots/04_ajuste_intervalo.png" width="480" alt="Ajuste de Intervalo" /> |
+
+| Alertas Sonoros Customizáveis (⚙️) |
+|:---:|
+| <img src="screenshots/06_config_sons.png" width="480" alt="Alertas Sonoros Específicos" /> |
 
 ---
 
@@ -31,7 +35,7 @@ O **BJJ Timer** foi desenvolvido pensando na dinâmica real do tatame: visualiza
    - Interface travada no modo panorâmico, ideal para apoiar o celular ou tablet no chão do tatame, banco ou suporte.
 
 2. **⚡ Botões de Tempo de Rápido Acesso**:
-   - Botões pré-definidos de **`1 min`**, **`3 min`**, **`4 min`** e **`5 min`** para ajustar o tempo de rola com apenas um toque.
+   - Botões pré-definidos de **`1 min`**, **`2 min`**, **`3 min`**, **`4 min`** e **`5 min`** para ajustar o tempo de rola com apenas um toque.
 
 3. **🔁 Controle Inteligente de Rounds / Repetições**:
    - **Início no 1**: Por padrão, o treino sempre começa configurado no Round 1 (`ROUND 1 / 1`).
@@ -62,8 +66,14 @@ O **BJJ Timer** foi desenvolvido pensando na dinâmica real do tatame: visualiza
    - **Contagem Regressiva Final (9 a 1)**: Bips a cada segundo da contagem regressiva, com tom agudo (1200Hz) e vibração nos 3 segundos finais.
    - *Geração 100% nativa via PCM 16-bit com `AudioTrack`, funcionando totalmente offline sem depender de arquivos de áudio externos.*
 
-9. **💡 Tela Sempre Ligada**:
-   - Configurado com `FLAG_KEEP_SCREEN_ON` para garantir que o display nunca desligue ou bloqueie durante o treino.
+9. **🎛️ Controle Granular de Sons (⚙️)**:
+   - Opção no menu de configurações para ativar ou desativar de forma independente:
+     - **Sons de Início e Preparação**: Sino duplo de combate e beeps de preparação 3-2-1.
+     - **Contagem Regressiva Final**: Batida de madeira aos 10s e bips de contagem 9 a 1.
+     - **Sons de Intervalo e Fim do Round**: Buzina de encerramento e aviso de descanso.
+
+10. **💡 Tela Sempre Ligada**:
+    - Configurado com `FLAG_KEEP_SCREEN_ON` para garantir que o display nunca desligue ou bloqueie durante o treino.
 
 ---
 

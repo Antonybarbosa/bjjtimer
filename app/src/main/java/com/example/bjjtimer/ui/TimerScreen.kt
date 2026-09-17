@@ -11,6 +11,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
@@ -180,7 +182,10 @@ fun TimerScreen(
             state = state,
             onDismiss = { showSettingsSheet = false },
             onSetRestDuration = { viewModel.setRestDuration(it) },
-            onAdjustRest = { viewModel.adjustRestDuration(it) }
+            onAdjustRest = { viewModel.adjustRestDuration(it) },
+            onToggleStartSound = { viewModel.toggleStartSound() },
+            onToggleCountdownSound = { viewModel.toggleCountdownSound() },
+            onToggleIntervalSound = { viewModel.toggleIntervalSound() }
         )
     }
 }
@@ -618,11 +623,11 @@ private fun StoppedLandscapeControls(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1m, 3m, 4m, 5m
-        val times = listOf(1, 3, 4, 5)
+        // 1m, 2m, 3m, 4m, 5m
+        val times = TimerDefaults.availableMinutes
         times.forEach { mins ->
             val isSelected = state.selectedMinutes == mins && state.phase == TimerPhase.IDLE
             LandscapeButton(
@@ -754,7 +759,10 @@ private fun SettingsBottomSheet(
     state: TimerUiState,
     onDismiss: () -> Unit,
     onSetRestDuration: (Int) -> Unit,
-    onAdjustRest: (Int) -> Unit
+    onAdjustRest: (Int) -> Unit,
+    onToggleStartSound: () -> Unit,
+    onToggleCountdownSound: () -> Unit,
+    onToggleIntervalSound: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
 
@@ -767,7 +775,8 @@ private fun SettingsBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Text(
                 text = "⏱️ Tempo de Intervalo entre Rounds",
@@ -781,7 +790,7 @@ private fun SettingsBottomSheet(
                 color = Color.LightGray
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -808,7 +817,7 @@ private fun SettingsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -817,7 +826,7 @@ private fun SettingsBottomSheet(
             ) {
                 Text(
                     text = "Ajuste Fino de Intervalo",
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
 
@@ -855,6 +864,52 @@ private fun SettingsBottomSheet(
                 }
             }
 
+            Spacer(modifier = Modifier.height(18.dp))
+            androidx.compose.material3.HorizontalDivider(color = CardBorder, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "🔊 Alertas Sonoros Específicos",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = BeltGold
+            )
+            Text(
+                text = "Ative ou silencie os alertas sonoros em cada momento do rola",
+                fontSize = 13.sp,
+                color = Color.LightGray
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 1. Início e Preparação
+            SoundSettingRow(
+                title = "Sons de Início e Preparação",
+                subtitle = "Sino duplo de combate (Ding-Ding) e beeps de preparação (3, 2, 1)",
+                isEnabled = state.settings.startSoundEnabled,
+                onToggle = onToggleStartSound
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 2. Contagem Regressiva Final (10s)
+            SoundSettingRow(
+                title = "Contagem Regressiva Final (10s)",
+                subtitle = "Batida de madeira (Wood-Clap) aos 10s e bips a cada segundo (9 até 1)",
+                isEnabled = state.settings.countdownSoundEnabled,
+                onToggle = onToggleCountdownSound
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 3. Sons de Intervalo e Fim do Round
+            SoundSettingRow(
+                title = "Sons de Intervalo e Fim do Round",
+                subtitle = "Buzina de ginásio (Buzzer) ao encerrar o round e aviso de descanso",
+                isEnabled = state.settings.intervalSoundEnabled,
+                onToggle = onToggleIntervalSound
+            )
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Button(
@@ -863,10 +918,59 @@ private fun SettingsBottomSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = BeltGold, contentColor = Color.Black),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(text = "CONFIRMAR INTERVALO", fontWeight = FontWeight.Bold)
+                Text(text = "CONCLUIR", fontWeight = FontWeight.Bold)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun SoundSettingRow(
+    title: String,
+    subtitle: String,
+    isEnabled: Boolean,
+    onToggle: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = DarkBackground,
+        border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                Text(
+                    text = title,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    lineHeight = 14.sp
+                )
+            }
+
+            androidx.compose.material3.Switch(
+                checked = isEnabled,
+                onCheckedChange = { onToggle() },
+                colors = androidx.compose.material3.SwitchDefaults.colors(
+                    checkedThumbColor = Color.Black,
+                    checkedTrackColor = BeltGold,
+                    uncheckedThumbColor = Color.LightGray,
+                    uncheckedTrackColor = CardBackground
+                )
+            )
         }
     }
 }

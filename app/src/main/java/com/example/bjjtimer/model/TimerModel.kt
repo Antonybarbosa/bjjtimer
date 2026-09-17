@@ -15,7 +15,10 @@ data class TimerSettings(
     val preparationSec: Int = 5,
     val warningSec: Int = 10,        // aviso aos 10s finais
     val soundEnabled: Boolean = true,
-    val vibrationEnabled: Boolean = true
+    val vibrationEnabled: Boolean = true,
+    val startSoundEnabled: Boolean = true,
+    val countdownSoundEnabled: Boolean = true,
+    val intervalSoundEnabled: Boolean = true
 )
 
 data class TimerUiState(
@@ -35,6 +38,6 @@ data class TimerUiState(
 )
 
 object TimerDefaults {
-    val availableMinutes = listOf(1, 3, 4, 5)
+    val availableMinutes = listOf(1, 2, 3, 4, 5)
     val availableIntervalsSec = listOf(15, 30, 45, 60, 90, 120, 180)
 }
